@@ -7,6 +7,10 @@ import {
   searchMemory,
 } from "./lib/memos-cloud-api.js";
 
+import { isHeartbeatEvent, debugEventSnapshot } from "./lib/heartbeat-filter.js";
+import { initStats, recordEvent, getConfigOverrides } from "./lib/stats.js";
+import { startDashboard } from "./lib/dashboard/server.js";
+
 let lastCaptureTime = 0;
 const conversationCounters = new Map();
 const API_KEY_HELP_URL = "https://memos-dashboard.openmem.net/cn/apikeys/";
@@ -175,12 +179,26 @@ export default {
   kind: "lifecycle",
 
   register(api) {
-    const cfg = buildConfig(api.pluginConfig);
+    const baseCfg = buildConfig(api.pluginConfig);
     const log = api.logger ?? console;
+
+    // --- Init stats & merge config overrides from dashboard ---
+    initStats();
+    const overrides = getConfigOverrides();
+    const cfg = { ...baseCfg, ...overrides };
 
     if (!cfg.envFileStatus?.found) {
       const searchPaths = cfg.envFileStatus?.searchPaths?.join(", ") ?? ENV_FILE_SEARCH_HINTS.join(", ");
       log.warn?.(`[memos-cloud] No .env found in ${searchPaths}; falling back to process env or plugin config.`);
+    }
+
+    // --- Start dashboard ---
+    if (cfg.dashboardEnabled) {
+      try {
+        startDashboard({ port: cfg.dashboardPort, runtimeConfig: cfg, log });
+      } catch (err) {
+        log.warn?.(`[memos-cloud] Dashboard start failed: ${err.message}`);
+      }
     }
 
     if (cfg.conversationSuffixMode === "counter" && cfg.resetOnNew) {
@@ -202,6 +220,18 @@ export default {
     }
 
     api.on("before_agent_start", async (event, ctx) => {
+      // --- Heartbeat filter ---
+      if (isHeartbeatEvent(event, ctx, cfg)) {
+        recordEvent("heartbeat_filtered", {
+          promptPreview: (event?.prompt ?? "").slice(0, 60),
+          debug: cfg.debugEvents ? debugEventSnapshot(event, ctx) : undefined,
+        });
+        if (cfg.debugEvents) {
+          log.info?.(`[memos-cloud] Heartbeat filtered: ${JSON.stringify(debugEventSnapshot(event, ctx))}`);
+        }
+        return;
+      }
+
       if (!cfg.recallEnabled) return;
       if (!event?.prompt || event.prompt.length < 3) return;
       if (!cfg.apiKey) {
@@ -209,21 +239,46 @@ export default {
         return;
       }
 
+      const t0 = Date.now();
       try {
         const payload = buildSearchPayload(cfg, event.prompt, ctx);
         const result = await searchMemory(cfg, payload);
-        const promptBlock = formatPromptBlock(result, { wrapTagBlocks: true });
+        const promptBlock = formatPromptBlock(result, {
+          wrapTagBlocks: true,
+          promptStyle: cfg.promptStyle,
+          promptTemplate: cfg.promptTemplate,
+        });
+
+        recordEvent("search", {
+          promptPreview: (event.prompt ?? "").slice(0, 60),
+          durationMs: Date.now() - t0,
+        });
+
         if (!promptBlock) return;
 
         return {
           prependContext: promptBlock,
         };
       } catch (err) {
+        recordEvent("search_error", {
+          promptPreview: (event?.prompt ?? "").slice(0, 60),
+          error: String(err),
+          durationMs: Date.now() - t0,
+        });
         log.warn?.(`[memos-cloud] recall failed: ${String(err)}`);
       }
     });
 
     api.on("agent_end", async (event, ctx) => {
+      // --- Heartbeat filter ---
+      if (isHeartbeatEvent(event, ctx, cfg)) {
+        recordEvent("heartbeat_filtered", {
+          promptPreview: "(agent_end)",
+          debug: cfg.debugEvents ? debugEventSnapshot(event, ctx) : undefined,
+        });
+        return;
+      }
+
       if (!cfg.addEnabled) return;
       if (!event?.success || !event?.messages?.length) return;
       if (!cfg.apiKey) {
@@ -237,6 +292,7 @@ export default {
       }
       lastCaptureTime = now;
 
+      const t0 = Date.now();
       try {
         const messages =
           cfg.captureStrategy === "full_session"
@@ -247,7 +303,16 @@ export default {
 
         const payload = buildAddMessagePayload(cfg, messages, ctx);
         await addMessage(cfg, payload);
+
+        recordEvent("add", {
+          promptPreview: `${messages.length} messages`,
+          durationMs: Date.now() - t0,
+        });
       } catch (err) {
+        recordEvent("add_error", {
+          error: String(err),
+          durationMs: Date.now() - t0,
+        });
         log.warn?.(`[memos-cloud] add failed: ${String(err)}`);
       }
     });

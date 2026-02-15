@@ -48,7 +48,14 @@
       "asyncMode": { "type": "boolean", "default": true },
       "timeoutMs": { "type": "integer", "default": 5000 },
       "retries": { "type": "integer", "default": 1 },
-      "throttleMs": { "type": "integer", "default": 0 }
+      "throttleMs": { "type": "integer", "default": 0 },
+      "ignoreHeartbeats": { "type": "boolean", "default": true, "description": "Skip MemOS API calls for OpenClaw heartbeat events" },
+      "heartbeatKeywords": { "type": "array", "items": { "type": "string" }, "default": ["HEARTBEAT_OK", "HEARTBEAT.md"], "description": "Keywords in prompt that indicate a heartbeat event" },
+      "debugEvents": { "type": "boolean", "default": false, "description": "Log full event structure for debugging heartbeat detection" },
+      "promptStyle": { "type": "string", "enum": ["default", "compact"], "default": "default", "description": "System prompt style: default (verbose) or compact (concise)" },
+      "promptTemplate": { "type": "string", "description": "Custom prompt template. Use {memories}, {currentTime}, {userQueryMarker} variables" },
+      "dashboardEnabled": { "type": "boolean", "default": true, "description": "Enable the monitoring dashboard HTTP server" },
+      "dashboardPort": { "type": "integer", "default": 9898, "description": "Port for the monitoring dashboard" }
     },
     "additionalProperties": false
   }

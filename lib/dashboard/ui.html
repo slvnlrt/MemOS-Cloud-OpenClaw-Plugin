@@ -1,0 +1,1269 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MemOS Monitor</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --bg: #0c0c18;
+        --bg-card: rgba(255, 255, 255, 0.04);
+        --bg-hover: rgba(255, 255, 255, 0.07);
+        --bg-input: rgba(255, 255, 255, 0.06);
+        --accent: #00d4aa;
+        --accent-dim: #00d4aa33;
+        --text: #e8e8f0;
+        --text2: #8888a0;
+        --ok: #4ade80;
+        --warn: #fbbf24;
+        --err: #f87171;
+        --radius: 12px;
+        --glass: 16px;
+        --sidebar-w: 60px;
+        --font: system-ui, -apple-system, "Segoe UI", sans-serif;
+        --mono: "SF Mono", "Cascadia Code", "Fira Code", monospace;
+      }
+      html,
+      body {
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font);
+        font-size: 14px;
+        overflow: hidden;
+      }
+
+      /* layout */
+      .app {
+        display: flex;
+        height: 100vh;
+      }
+      .sidebar {
+        width: var(--sidebar-w);
+        background: rgba(255, 255, 255, 0.02);
+        border-right: 1px solid rgba(255, 255, 255, 0.06);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 12px 0;
+        gap: 4px;
+        flex-shrink: 0;
+      }
+      .sidebar button {
+        width: 42px;
+        height: 42px;
+        border: none;
+        border-radius: 10px;
+        background: transparent;
+        color: var(--text2);
+        font-size: 18px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+      .sidebar button:hover {
+        background: var(--bg-hover);
+        color: var(--text);
+      }
+      .sidebar button.active {
+        background: var(--accent-dim);
+        color: var(--accent);
+      }
+      .sidebar button .tip {
+        position: absolute;
+        left: 52px;
+        background: #1a1a2e;
+        color: var(--text);
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.15s;
+      }
+      .sidebar button:hover .tip {
+        opacity: 1;
+      }
+      .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 24px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .header h1 {
+        font-size: 16px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .header h1 span {
+        font-size: 20px;
+      }
+      .refresh-ctl {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text2);
+        font-size: 12px;
+      }
+      .refresh-ctl select {
+        background: var(--bg-input);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text);
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+      }
+      .content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px;
+      }
+      .statusbar {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 8px 24px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        font-size: 11px;
+        color: var(--text2);
+      }
+      .statusbar .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--ok);
+        display: inline-block;
+      }
+
+      /* cards */
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .card {
+        background: var(--bg-card);
+        backdrop-filter: blur(var(--glass));
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: var(--radius);
+        padding: 20px;
+        transition: background 0.2s;
+      }
+      .card:hover {
+        background: var(--bg-hover);
+      }
+      .card .icon {
+        font-size: 20px;
+        margin-bottom: 8px;
+      }
+      .card .value {
+        font-size: 28px;
+        font-weight: 700;
+        font-family: var(--mono);
+        color: var(--text);
+      }
+      .card .label {
+        font-size: 12px;
+        color: var(--text2);
+        margin-top: 4px;
+      }
+      .card .sub {
+        font-size: 11px;
+        color: var(--text2);
+        margin-top: 2px;
+        font-family: var(--mono);
+      }
+      .card.err .value {
+        color: var(--err);
+      }
+
+      /* section */
+      .section {
+        display: none;
+      }
+      .section.active {
+        display: block;
+      }
+      .section-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        color: var(--text2);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      /* logs */
+      .log-filters {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+      }
+      .log-filters button {
+        padding: 5px 14px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: transparent;
+        color: var(--text2);
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.2s;
+      }
+      .log-filters button.active {
+        background: var(--accent-dim);
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+      .log-search {
+        background: var(--bg-input);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text);
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        width: 220px;
+        margin-left: auto;
+      }
+      .log-table {
+        width: 100%;
+      }
+      .log-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.15s;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      }
+      .log-row:hover {
+        background: var(--bg-hover);
+      }
+      .log-row .time {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--text2);
+        min-width: 70px;
+        flex-shrink: 0;
+      }
+      .log-row .badge {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        margin-top: 4px;
+      }
+      .badge.normal {
+        background: var(--ok);
+      }
+      .badge.heartbeat {
+        background: var(--warn);
+      }
+      .badge.error {
+        background: var(--err);
+      }
+      .log-row .type {
+        font-size: 11px;
+        min-width: 100px;
+        flex-shrink: 0;
+        font-family: var(--mono);
+      }
+      .log-row .preview {
+        font-size: 12px;
+        color: var(--text2);
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .log-row .dur {
+        font-size: 11px;
+        color: var(--text2);
+        font-family: var(--mono);
+        min-width: 50px;
+        text-align: right;
+      }
+      .log-details {
+        display: none;
+        padding: 12px 16px;
+        background: var(--bg-input);
+        border-radius: 8px;
+        margin: 4px 0 8px;
+        font-family: var(--mono);
+        font-size: 11px;
+        white-space: pre-wrap;
+        word-break: break-all;
+        line-height: 1.6;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+      .log-details.open {
+        display: block;
+      }
+
+      /* config */
+      .cfg-group {
+        background: var(--bg-card);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: var(--radius);
+        margin-bottom: 12px;
+        overflow: hidden;
+      }
+      .cfg-group-header {
+        padding: 14px 18px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-weight: 600;
+        font-size: 13px;
+        user-select: none;
+      }
+      .cfg-group-header:hover {
+        background: var(--bg-hover);
+      }
+      .cfg-group-header .arrow {
+        transition: transform 0.2s;
+        font-size: 10px;
+        color: var(--text2);
+      }
+      .cfg-group-header.open .arrow {
+        transform: rotate(90deg);
+      }
+      .cfg-group-body {
+        padding: 0 18px 18px;
+        display: none;
+      }
+      .cfg-group-body.open {
+        display: block;
+      }
+      .cfg-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      }
+      .cfg-row:last-child {
+        border-bottom: none;
+      }
+      .cfg-row label {
+        font-size: 13px;
+        flex: 1;
+      }
+      .cfg-row .hint {
+        font-size: 11px;
+        color: var(--text2);
+        margin-left: 8px;
+      }
+      /* toggle */
+      .toggle {
+        position: relative;
+        width: 40px;
+        height: 22px;
+        flex-shrink: 0;
+      }
+      .toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .toggle .slider {
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 22px;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .toggle .slider::before {
+        content: "";
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        left: 3px;
+        bottom: 3px;
+        background: #fff;
+        border-radius: 50%;
+        transition: transform 0.2s;
+      }
+      .toggle input:checked + .slider {
+        background: var(--accent);
+      }
+      .toggle input:checked + .slider::before {
+        transform: translateX(18px);
+      }
+      /* number input */
+      .num-input {
+        width: 70px;
+        background: var(--bg-input);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text);
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-family: var(--mono);
+        text-align: center;
+      }
+      /* select */
+      .cfg-select {
+        background: var(--bg-input);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text);
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 13px;
+      }
+      /* chips */
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 6px;
+      }
+      .chip {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: var(--accent-dim);
+        color: var(--accent);
+        padding: 3px 10px;
+        border-radius: 16px;
+        font-size: 12px;
+        font-family: var(--mono);
+      }
+      .chip button {
+        background: none;
+        border: none;
+        color: var(--accent);
+        cursor: pointer;
+        font-size: 14px;
+        line-height: 1;
+        padding: 0 2px;
+      }
+      .chip-add {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+      }
+      .chip-add input {
+        background: var(--bg-input);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text);
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        width: 180px;
+      }
+      .chip-add button {
+        background: var(--accent-dim);
+        color: var(--accent);
+        border: 1px solid var(--accent);
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      /* actions */
+      .actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+        position: sticky;
+        bottom: 0;
+        background: var(--bg);
+        padding: 16px 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .btn {
+        padding: 8px 20px;
+        border-radius: 8px;
+        border: none;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: #000;
+      }
+      .btn-primary:hover {
+        filter: brightness(1.1);
+      }
+      .btn-secondary {
+        background: transparent;
+        color: var(--text2);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+      }
+      .btn-secondary:hover {
+        background: var(--bg-hover);
+      }
+      .btn:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+      .save-ok {
+        color: var(--ok);
+        font-size: 12px;
+        margin-left: 8px;
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      .save-ok.show {
+        opacity: 1;
+      }
+
+      /* prompt editor */
+      .prompt-presets {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .prompt-presets button {
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: transparent;
+        color: var(--text2);
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.2s;
+      }
+      .prompt-presets button.active {
+        background: var(--accent-dim);
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+      .prompt-presets button .desc {
+        display: block;
+        font-size: 10px;
+        color: var(--text2);
+        margin-top: 2px;
+      }
+      .prompt-editor {
+        position: relative;
+      }
+      .prompt-editor textarea {
+        width: 100%;
+        min-height: 350px;
+        background: var(--bg-input);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text);
+        font-family: var(--mono);
+        font-size: 12px;
+        line-height: 1.6;
+        padding: 16px;
+        border-radius: var(--radius);
+        resize: vertical;
+      }
+      .prompt-editor textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      .prompt-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+        font-size: 11px;
+        color: var(--text2);
+      }
+      .prompt-vars {
+        margin-top: 16px;
+      }
+      .prompt-vars h3 {
+        font-size: 12px;
+        color: var(--text2);
+        margin-bottom: 8px;
+      }
+      .var-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: var(--bg-card);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-family: var(--mono);
+        font-size: 11px;
+        cursor: pointer;
+        margin: 3px;
+        transition: background 0.15s;
+      }
+      .var-chip:hover {
+        background: var(--accent-dim);
+        color: var(--accent);
+      }
+      .preview-pane {
+        margin-top: 16px;
+      }
+      .preview-pane summary {
+        font-size: 12px;
+        color: var(--text2);
+        cursor: pointer;
+        margin-bottom: 8px;
+      }
+      .preview-pane pre {
+        background: var(--bg-input);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: var(--radius);
+        padding: 16px;
+        font-family: var(--mono);
+        font-size: 11px;
+        line-height: 1.5;
+        max-height: 300px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+
+      .note {
+        background: rgba(0, 212, 170, 0.08);
+        border-left: 3px solid var(--accent);
+        padding: 10px 14px;
+        border-radius: 0 8px 8px 0;
+        font-size: 12px;
+        color: var(--text2);
+        margin-bottom: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <!-- Sidebar -->
+      <nav class="sidebar">
+        <button class="active" data-tab="overview" title="Overview">
+          <span>📊</span><span class="tip">Vue d'ensemble</span>
+        </button>
+        <button data-tab="logs" title="Logs">
+          <span>📋</span><span class="tip">Journal</span>
+        </button>
+        <button data-tab="config" title="Config">
+          <span>⚙️</span><span class="tip">Configuration</span>
+        </button>
+        <button data-tab="prompt" title="Prompt Editor">
+          <span>✏️</span><span class="tip">Éditeur de prompt</span>
+        </button>
+      </nav>
+
+      <div class="main">
+        <!-- Header -->
+        <header class="header">
+          <h1><span>🧠</span> MemOS Monitor</h1>
+          <div class="refresh-ctl">
+            <span>Auto-refresh:</span>
+            <select id="refreshInterval">
+              <option value="5000">5s</option>
+              <option value="15000" selected>15s</option>
+              <option value="30000">30s</option>
+              <option value="0">Off</option>
+            </select>
+          </div>
+        </header>
+
+        <!-- Content -->
+        <div class="content" id="content">
+          <!-- OVERVIEW -->
+          <div class="section active" id="sec-overview">
+            <div class="cards" id="statsCards"></div>
+            <div class="section-title">Activité récente</div>
+            <div id="recentLogs"></div>
+          </div>
+
+          <!-- LOGS -->
+          <div class="section" id="sec-logs">
+            <div class="log-filters" id="logFilters">
+              <button class="active" data-filter="all">Tous</button>
+              <button data-filter="normal">Normaux</button>
+              <button data-filter="heartbeat">Heartbeats</button>
+              <button data-filter="error">Erreurs</button>
+              <input
+                class="log-search"
+                id="logSearch"
+                placeholder="Rechercher…"
+                type="text"
+              />
+            </div>
+            <div id="logList"></div>
+          </div>
+
+          <!-- CONFIG -->
+          <div class="section" id="sec-config">
+            <div class="note">
+              Les modifications prennent effet au redémarrage d'OpenClaw.
+            </div>
+            <div id="configForm"></div>
+            <div class="actions">
+              <button class="btn btn-primary" id="cfgSave" disabled>
+                💾 Sauvegarder
+              </button>
+              <button class="btn btn-secondary" id="cfgReset">
+                ↩ Réinitialiser
+              </button>
+              <span class="save-ok" id="cfgSaveOk">✓ Sauvegardé</span>
+            </div>
+          </div>
+
+          <!-- PROMPT EDITOR -->
+          <div class="section" id="sec-prompt">
+            <div class="prompt-presets" id="promptPresets">
+              <button class="active" data-style="default">
+                Verbeux (défaut)
+                <span class="desc">Prompt complet MemOS (~50 lignes)</span>
+              </button>
+              <button data-style="compact">
+                Compact
+                <span class="desc">Version concise (~12 lignes)</span>
+              </button>
+              <button data-style="custom">
+                Custom
+                <span class="desc">Votre prompt personnalisé</span>
+              </button>
+            </div>
+            <div class="prompt-toolbar">
+              <span id="promptStats">0 lignes · 0 caractères</span>
+              <button
+                class="btn btn-secondary"
+                id="promptCopy"
+                style="padding: 3px 10px; font-size: 11px"
+              >
+                📋 Copier
+              </button>
+              <button
+                class="btn btn-secondary"
+                id="promptRestore"
+                style="padding: 3px 10px; font-size: 11px"
+              >
+                ↩ Restaurer
+              </button>
+            </div>
+            <div class="prompt-editor">
+              <textarea id="promptText" spellcheck="false"></textarea>
+            </div>
+            <div class="prompt-vars">
+              <h3>Variables disponibles (cliquer pour insérer)</h3>
+              <span class="var-chip" data-var="{memories}">📦 {memories}</span>
+              <span class="var-chip" data-var="{currentTime}"
+                >🕐 {currentTime}</span
+              >
+              <span class="var-chip" data-var="{userQueryMarker}"
+                >🔖 {userQueryMarker}</span
+              >
+            </div>
+            <details class="preview-pane">
+              <summary>Aperçu du prompt généré</summary>
+              <pre id="promptPreview"></pre>
+            </details>
+            <div class="actions">
+              <button class="btn btn-primary" id="promptSave" disabled>
+                💾 Sauvegarder
+              </button>
+              <span class="save-ok" id="promptSaveOk">✓ Sauvegardé</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status bar -->
+        <div class="statusbar">
+          <span><span class="dot" id="statusDot"></span></span>
+          <span id="statusText">Connecting…</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        // --- State ---
+        let refreshTimer = null;
+        let currentTab = "overview";
+        let currentLogFilter = "all";
+        let runtimeConfig = {};
+        let configOverrides = {};
+        let configDirty = false;
+        let promptStyle = "default";
+        let promptDirty = false;
+        let lastStats = null;
+        let lastUpdate = 0;
+
+        const API = "";
+
+        // --- Helpers ---
+        async function api(path, opts = {}) {
+          const res = await fetch(API + path, opts);
+          return res.json();
+        }
+
+        function $(sel) {
+          return document.querySelector(sel);
+        }
+        function $$(sel) {
+          return document.querySelectorAll(sel);
+        }
+
+        function fmtTime(iso) {
+          if (!iso) return "";
+          const d = new Date(iso);
+          return d.toLocaleTimeString("fr-FR", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          });
+        }
+
+        function fmtUptime(iso) {
+          if (!iso) return "–";
+          const ms = Date.now() - new Date(iso).getTime();
+          const s = Math.floor(ms / 1000);
+          const m = Math.floor(s / 60);
+          const h = Math.floor(m / 60);
+          const d = Math.floor(h / 24);
+          if (d > 0) return `${d}j ${h % 24}h ${m % 60}m`;
+          if (h > 0) return `${h}h ${m % 60}m`;
+          return `${m}m ${s % 60}s`;
+        }
+
+        function badgeClass(type) {
+          if (type === "heartbeat_filtered") return "heartbeat";
+          if (type.includes("error")) return "error";
+          return "normal";
+        }
+
+        // --- Tabs ---
+        $$(".sidebar button").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            currentTab = btn.dataset.tab;
+            $$(".sidebar button").forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+            $$(".section").forEach((s) => s.classList.remove("active"));
+            $(`#sec-${currentTab}`).classList.add("active");
+            if (currentTab === "logs") loadLogs();
+            if (currentTab === "config") loadConfig();
+            if (currentTab === "prompt") loadPrompt();
+          });
+        });
+
+        // --- Overview ---
+        function renderStats(data) {
+          const s = data.stats;
+          lastStats = s;
+          const errClass = s.errors > 0 ? " err" : "";
+          $("#statsCards").innerHTML = `
+      <div class="card"><div class="icon">⚡</div><div class="value">${s.totalEvents}</div><div class="label">Total events</div><div class="sub">depuis le démarrage</div></div>
+      <div class="card"><div class="icon">🛡️</div><div class="value">${s.heartbeatsFiltered}</div><div class="label">Heartbeats filtrés</div><div class="sub">${s.totalEvents > 0 ? Math.round((s.heartbeatsFiltered / s.totalEvents) * 100) : 0}% du total</div></div>
+      <div class="card"><div class="icon">🔗</div><div class="value">${s.searchCalls + s.addCalls}</div><div class="label">Appels API MemOS</div><div class="sub">search: ${s.searchCalls} / add: ${s.addCalls}</div></div>
+      <div class="card${errClass}"><div class="icon">${s.errors > 0 ? "⚠️" : "✅"}</div><div class="value">${s.errors}</div><div class="label">Erreurs</div><div class="sub">${s.errors === 0 ? "Aucune erreur" : "Voir les logs"}</div></div>
+    `;
+        }
+
+        function renderRecentLogs(logs) {
+          if (!logs || !logs.length) {
+            $("#recentLogs").innerHTML =
+              '<div style="color:var(--text2);font-size:13px;padding:16px">Aucun événement pour le moment.</div>';
+            return;
+          }
+          $("#recentLogs").innerHTML = logs
+            .slice(0, 10)
+            .map(
+              (l) => `
+      <div class="log-row" data-id="${l.id}">
+        <span class="time">${fmtTime(l.timestamp)}</span>
+        <span class="badge ${badgeClass(l.type)}"></span>
+        <span class="type">${l.type}</span>
+        <span class="preview">${esc(l.promptPreview || "–")}</span>
+        <span class="dur">${l.durationMs != null ? l.durationMs + "ms" : ""}</span>
+      </div>
+    `,
+            )
+            .join("");
+        }
+
+        async function loadOverview() {
+          try {
+            const data = await api("/api/stats");
+            renderStats(data);
+            renderRecentLogs(data.logs);
+            lastUpdate = Date.now();
+            $("#statusDot").style.background = "var(--ok)";
+            $("#statusText").textContent =
+              `Connecté · Uptime: ${fmtUptime(data.stats.startedAt)}`;
+          } catch (e) {
+            $("#statusDot").style.background = "var(--err)";
+            $("#statusText").textContent = "Erreur de connexion";
+          }
+        }
+
+        // --- Logs ---
+        async function loadLogs() {
+          const search = ($("#logSearch")?.value || "").toLowerCase();
+          const data = await api(
+            `/api/logs?type=${currentLogFilter}&limit=100`,
+          );
+          let logs = data.logs || [];
+          if (search)
+            logs = logs.filter(
+              (l) =>
+                (l.promptPreview || "").toLowerCase().includes(search) ||
+                l.type.includes(search),
+            );
+          renderLogList(logs);
+        }
+
+        function renderLogList(logs) {
+          if (!logs.length) {
+            $("#logList").innerHTML =
+              '<div style="color:var(--text2);font-size:13px;padding:16px">Aucun résultat.</div>';
+            return;
+          }
+          $("#logList").innerHTML = logs
+            .map(
+              (l) => `
+      <div class="log-row" onclick="this.nextElementSibling.classList.toggle('open')" data-id="${l.id}">
+        <span class="time">${fmtTime(l.timestamp)}</span>
+        <span class="badge ${badgeClass(l.type)}"></span>
+        <span class="type">${l.type}</span>
+        <span class="preview">${esc(l.promptPreview || "–")}</span>
+        <span class="dur">${l.durationMs != null ? l.durationMs + "ms" : ""}</span>
+      </div>
+      <div class="log-details">${esc(JSON.stringify(l, null, 2))}</div>
+    `,
+            )
+            .join("");
+        }
+
+        // Log filter buttons
+        $$("#logFilters button").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            currentLogFilter = btn.dataset.filter;
+            $$("#logFilters button").forEach((b) =>
+              b.classList.remove("active"),
+            );
+            btn.classList.add("active");
+            loadLogs();
+          });
+        });
+        $("#logSearch")?.addEventListener("input", () => loadLogs());
+
+        // --- Config ---
+        async function loadConfig() {
+          const data = await api("/api/config");
+          runtimeConfig = data.runtime || {};
+          configOverrides = data.overrides || {};
+          renderConfigForm();
+        }
+
+        function cfgVal(key) {
+          return configOverrides[key] !== undefined
+            ? configOverrides[key]
+            : runtimeConfig[key];
+        }
+
+        function renderConfigForm() {
+          const html = `
+      ${cfgGroup(
+        "Filtres heartbeat",
+        `
+        ${cfgToggle("ignoreHeartbeats", "Ignorer les heartbeats", "Filtre les messages heartbeat avant les appels API")}
+        <div class="cfg-row" style="flex-direction:column;align-items:flex-start">
+          <label>Mots-clés de détection</label>
+          <div class="chips" id="kwChips">${(cfgVal("heartbeatKeywords") || []).map((kw) => `<span class="chip">${esc(kw)}<button onclick="removeKw(this, '${esc(kw)}')">&times;</button></span>`).join("")}</div>
+          <div class="chip-add"><input id="kwInput" placeholder="Ajouter un mot-clé…"><button onclick="addKw()">+ Ajouter</button></div>
+        </div>
+        ${cfgToggle("debugEvents", "Mode debug", "Logue la structure des events dans la console")}
+      `,
+      )}
+      ${cfgGroup(
+        "Mémoire MemOS",
+        `
+        ${cfgToggle("recallEnabled", "Recall activé", "Recherche de mémoires")}
+        ${cfgToggle("addEnabled", "Add activé", "Sauvegarde des conversations")}
+        ${cfgNumber("memoryLimitNumber", "Limite de mémoires", 1, 30)}
+        ${cfgToggle("includePreference", "Inclure préférences")}
+        ${cfgNumber("preferenceLimitNumber", "Limite de préférences", 1, 30)}
+        ${cfgToggle("includeAssistant", "Inclure réponses assistant")}
+        ${cfgSelect("captureStrategy", "Stratégie de capture", [
+          ["last_turn", "Dernier tour"],
+          ["full_session", "Session complète"],
+        ])}
+      `,
+      )}
+      ${cfgGroup(
+        "Avancé",
+        `
+        ${cfgNumber("timeoutMs", "Timeout API (ms)", 1000, 30000)}
+        ${cfgNumber("retries", "Retries", 0, 5)}
+        ${cfgNumber("throttleMs", "Throttle (ms)", 0, 60000)}
+        ${cfgNumber("maxMessageChars", "Max chars/message", 1000, 100000)}
+      `,
+      )}
+    `;
+          $("#configForm").innerHTML = html;
+          configDirty = false;
+          $("#cfgSave").disabled = true;
+        }
+
+        function cfgGroup(title, body) {
+          return `<div class="cfg-group">
+      <div class="cfg-group-header" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+        ${title}<span class="arrow">▶</span>
+      </div>
+      <div class="cfg-group-body">${body}</div>
+    </div>`;
+        }
+        function cfgToggle(key, label, hint) {
+          const val = cfgVal(key);
+          const checked = val ? "checked" : "";
+          return `<div class="cfg-row"><label>${label}${hint ? `<span class="hint">${hint}</span>` : ""}</label>
+      <label class="toggle"><input type="checkbox" ${checked} onchange="setCfg('${key}', this.checked)"><span class="slider"></span></label></div>`;
+        }
+        function cfgNumber(key, label, min, max) {
+          const val = cfgVal(key) ?? "";
+          return `<div class="cfg-row"><label>${label}</label>
+      <input class="num-input" type="number" min="${min}" max="${max}" value="${val}" onchange="setCfg('${key}', +this.value)"></div>`;
+        }
+        function cfgSelect(key, label, options) {
+          const val = cfgVal(key);
+          const opts = options
+            .map(
+              ([v, l]) =>
+                `<option value="${v}" ${v === val ? "selected" : ""}>${l}</option>`,
+            )
+            .join("");
+          return `<div class="cfg-row"><label>${label}</label><select class="cfg-select" onchange="setCfg('${key}', this.value)">${opts}</select></div>`;
+        }
+
+        // Global config functions (called from inline handlers)
+        window.setCfg = function (key, val) {
+          configOverrides[key] = val;
+          configDirty = true;
+          $("#cfgSave").disabled = false;
+          $("#cfgSaveOk").classList.remove("show");
+        };
+        window.removeKw = function (btn, kw) {
+          const kws = (cfgVal("heartbeatKeywords") || []).filter(
+            (k) => k !== kw,
+          );
+          configOverrides.heartbeatKeywords = kws;
+          btn.closest(".chip").remove();
+          configDirty = true;
+          $("#cfgSave").disabled = false;
+        };
+        window.addKw = function () {
+          const inp = $("#kwInput");
+          const kw = (inp.value || "").trim();
+          if (!kw) return;
+          const kws = cfgVal("heartbeatKeywords") || [];
+          if (!kws.includes(kw)) {
+            kws.push(kw);
+            configOverrides.heartbeatKeywords = kws;
+            const chip = document.createElement("span");
+            chip.className = "chip";
+            chip.innerHTML = `${esc(kw)}<button onclick="removeKw(this, '${esc(kw)}')">&times;</button>`;
+            $("#kwChips").appendChild(chip);
+            configDirty = true;
+            $("#cfgSave").disabled = false;
+          }
+          inp.value = "";
+        };
+
+        $("#cfgSave")?.addEventListener("click", async () => {
+          await api("/api/config", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(configOverrides),
+          });
+          configDirty = false;
+          $("#cfgSave").disabled = true;
+          const ok = $("#cfgSaveOk");
+          ok.classList.add("show");
+          setTimeout(() => ok.classList.remove("show"), 2000);
+        });
+
+        $("#cfgReset")?.addEventListener("click", async () => {
+          if (!confirm("Réinitialiser la config aux valeurs par défaut ?"))
+            return;
+          await api("/api/config", { method: "DELETE" });
+          loadConfig();
+        });
+
+        // --- Prompt ---
+        async function loadPrompt() {
+          const data = await api("/api/config");
+          const ov = data.overrides || {};
+          promptStyle =
+            ov.promptStyle || data.runtime?.promptStyle || "default";
+          activatePresetBtn(promptStyle);
+
+          if (promptStyle === "custom" && ov.promptTemplate) {
+            $("#promptText").value = ov.promptTemplate;
+          } else {
+            const pv = await api("/api/prompt/preview", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ style: promptStyle }),
+            });
+            $("#promptText").value = pv.preview || "";
+          }
+          updatePromptStats();
+          promptDirty = false;
+          $("#promptSave").disabled = true;
+        }
+
+        function activatePresetBtn(style) {
+          $$("#promptPresets button").forEach((b) => {
+            b.classList.toggle("active", b.dataset.style === style);
+          });
+          $("#promptText").readOnly = style !== "custom";
+        }
+
+        $$("#promptPresets button").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            promptStyle = btn.dataset.style;
+            activatePresetBtn(promptStyle);
+            if (promptStyle !== "custom") {
+              const pv = await api("/api/prompt/preview", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ style: promptStyle }),
+              });
+              $("#promptText").value = pv.preview || "";
+            } else {
+              // Start with current text
+            }
+            updatePromptStats();
+            promptDirty = true;
+            $("#promptSave").disabled = false;
+          });
+        });
+
+        $("#promptText")?.addEventListener("input", () => {
+          updatePromptStats();
+          promptDirty = true;
+          $("#promptSave").disabled = false;
+          loadPreview();
+        });
+
+        function updatePromptStats() {
+          const t = $("#promptText").value;
+          const lines = t.split("\n").length;
+          const chars = t.length;
+          $("#promptStats").textContent =
+            `${lines} lignes · ${chars} caractères`;
+        }
+
+        async function loadPreview() {
+          const style = promptStyle;
+          const template = style === "custom" ? $("#promptText").value : null;
+          try {
+            const pv = await api("/api/prompt/preview", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ style, template }),
+            });
+            $("#promptPreview").textContent = pv.preview || "";
+          } catch {}
+        }
+
+        // Variable chips
+        $$(".var-chip").forEach((chip) => {
+          chip.addEventListener("click", () => {
+            const ta = $("#promptText");
+            if (ta.readOnly) return;
+            const start = ta.selectionStart;
+            const v = chip.dataset.var;
+            ta.value =
+              ta.value.slice(0, start) + v + ta.value.slice(ta.selectionEnd);
+            ta.selectionStart = ta.selectionEnd = start + v.length;
+            ta.focus();
+            updatePromptStats();
+            promptDirty = true;
+            $("#promptSave").disabled = false;
+          });
+        });
+
+        $("#promptCopy")?.addEventListener("click", () => {
+          navigator.clipboard.writeText($("#promptText").value);
+        });
+
+        $("#promptRestore")?.addEventListener("click", () => {
+          if (confirm("Restaurer le prompt par défaut ?")) {
+            promptStyle = "default";
+            activatePresetBtn("default");
+            loadPrompt();
+          }
+        });
+
+        $("#promptSave")?.addEventListener("click", async () => {
+          const ov = { ...configOverrides, promptStyle };
+          if (promptStyle === "custom") {
+            ov.promptTemplate = $("#promptText").value;
+          } else {
+            delete ov.promptTemplate;
+          }
+          await api("/api/config", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(ov),
+          });
+          configOverrides = ov;
+          promptDirty = false;
+          $("#promptSave").disabled = true;
+          const ok = $("#promptSaveOk");
+          ok.classList.add("show");
+          setTimeout(() => ok.classList.remove("show"), 2000);
+        });
+
+        // --- Auto-refresh ---
+        function startRefresh() {
+          const ms = parseInt($("#refreshInterval").value, 10);
+          if (refreshTimer) clearInterval(refreshTimer);
+          if (ms > 0) {
+            refreshTimer = setInterval(() => {
+              loadOverview();
+              if (currentTab === "logs") loadLogs();
+            }, ms);
+          }
+        }
+
+        $("#refreshInterval")?.addEventListener("change", startRefresh);
+
+        // --- Helpers ---
+        function esc(str) {
+          if (!str) return "";
+          return str
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+        }
+
+        // --- Init ---
+        loadOverview();
+        startRefresh();
+      })();
+    </script>
+  </body>
+</html>
