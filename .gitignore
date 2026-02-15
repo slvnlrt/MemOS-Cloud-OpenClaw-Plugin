@@ -1,0 +1,5 @@
+memory-bank/
+memos-state.json
+.env
+*.tmp
+node_modules/
