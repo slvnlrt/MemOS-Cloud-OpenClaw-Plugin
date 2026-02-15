@@ -11,6 +11,23 @@ import { isHeartbeatEvent, debugEventSnapshot } from "./lib/heartbeat-filter.js"
 import { initStats, recordEvent, getConfigOverrides } from "./lib/stats.js";
 import { startDashboard } from "./lib/dashboard/server.js";
 
+/**
+ * Strips MemOS boilerplate from prompt for cleaner dashboard logs.
+ */
+function cleanPromptPreview(prompt) {
+  if (!prompt) return "";
+  let p = prompt;
+  // Strip "Conversation info (untrusted metadata):" and the following JSON block
+  p = p.replace(/^Conversation info \(untrusted metadata\):[\s\S]*?```json[\s\S]*?```\n*/i, "");
+  // Strip "Recall result (untrusted metadata):" and the following JSON block
+  p = p.replace(/^Recall result \(untrusted metadata\):[\s\S]*?```json[\s\S]*?```\n*/i, "");
+  // Strip common MemOS headers if they appear at the start
+  p = p.replace(/^# (Role|System Context|Memory Data)[\s\S]*?(?=# (System Context|Memory Data|Instructions|Original Query)|$)/gi, "");
+  // Strip markers
+  p = p.replace(USER_QUERY_MARKER, "");
+  return p.trim().slice(0, 100);
+}
+
 let lastCaptureTime = 0;
 const conversationCounters = new Map();
 const API_KEY_HELP_URL = "https://memos-dashboard.openmem.net/cn/apikeys/";
@@ -250,7 +267,7 @@ export default {
         });
 
         recordEvent("search", {
-          promptPreview: (event.prompt ?? "").slice(0, 60),
+          promptPreview: cleanPromptPreview(event.prompt),
           durationMs: Date.now() - t0,
         });
 

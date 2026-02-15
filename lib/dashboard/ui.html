@@ -13,27 +13,39 @@
         padding: 0;
       }
       :root {
-        --bg: #0c0c18;
-        --bg-card: rgba(255, 255, 255, 0.04);
-        --bg-hover: rgba(255, 255, 255, 0.07);
-        --bg-input: rgba(255, 255, 255, 0.06);
-        --accent: #00d4aa;
-        --accent-dim: #00d4aa33;
-        --text: #e8e8f0;
-        --text2: #8888a0;
-        --ok: #4ade80;
-        --warn: #fbbf24;
-        --err: #f87171;
-        --radius: 12px;
-        --glass: 16px;
-        --sidebar-w: 60px;
-        --font: system-ui, -apple-system, "Segoe UI", sans-serif;
-        --mono: "SF Mono", "Cascadia Code", "Fira Code", monospace;
+        --bg: hwb(242 3% 91%);
+        --bg-glass: rgba(10, 10, 25, 0.7);
+        --bg-card: rgba(255, 255, 255, 0.03);
+        --bg-hover: rgba(255, 255, 255, 0.06);
+        --bg-input: rgba(255, 255, 255, 0.05);
+        --accent: #00ffcc;
+        --accent-rgb: 0, 255, 204;
+        --accent-dim: rgba(0, 255, 204, 0.15);
+        --text: #f0f0f5;
+        --text-dim: #94a3b8;
+        --ok: #10b981;
+        --warn: #f59e0b;
+        --err: #ef4444;
+        --radius: 16px;
+        --glass: 20px;
+        --sidebar-w: 72px;
+        --font: "Inter", -apple-system, system-ui, sans-serif;
+        --mono: "JetBrains Mono", "Fira Code", monospace;
+        --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
       }
-      html,
-      body {
+      
+      /* custom scrollbar */
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background: var(--accent-dim); }
+
+      html, body {
         height: 100%;
         background: var(--bg);
+        background-image: 
+          radial-gradient(at 0% 0%, hsla(242, 30%, 15%, 1) 0, transparent 50%),
+          radial-gradient(at 100% 100%, hsla(168, 100%, 10%, 1) 0, transparent 50%);
         color: var(--text);
         font-family: var(--font);
         font-size: 14px;
@@ -47,25 +59,26 @@
       }
       .sidebar {
         width: var(--sidebar-w);
-        background: rgba(255, 255, 255, 0.02);
-        border-right: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(10px);
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding: 12px 0;
-        gap: 4px;
+        padding: 24px 0;
+        gap: 12px;
         flex-shrink: 0;
       }
       .sidebar button {
-        width: 42px;
-        height: 42px;
+        width: 48px;
+        height: 48px;
         border: none;
-        border-radius: 10px;
+        border-radius: 14px;
         background: transparent;
-        color: var(--text2);
-        font-size: 18px;
+        color: var(--text-dim);
+        font-size: 20px;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -74,26 +87,34 @@
       .sidebar button:hover {
         background: var(--bg-hover);
         color: var(--text);
+        transform: translateY(-2px);
       }
       .sidebar button.active {
         background: var(--accent-dim);
         color: var(--accent);
+        box-shadow: 0 0 15px var(--accent-dim);
       }
       .sidebar button .tip {
         position: absolute;
-        left: 52px;
+        left: 64px;
         background: #1a1a2e;
         color: var(--text);
-        padding: 4px 10px;
-        border-radius: 6px;
+        padding: 6px 12px;
+        border-radius: 8px;
         font-size: 12px;
+        font-weight: 500;
         white-space: nowrap;
         opacity: 0;
         pointer-events: none;
-        transition: opacity 0.15s;
+        transition: all 0.2s;
+        z-index: 100;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: var(--shadow);
+        transform: translateX(-10px);
       }
       .sidebar button:hover .tip {
         opacity: 1;
+        transform: translateX(0);
       }
       .main {
         flex: 1;
@@ -105,38 +126,105 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 14px 24px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        padding: 20px 32px;
+        background: rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(5px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
       }
       .header h1 {
-        font-size: 16px;
-        font-weight: 600;
+        font-size: 18px;
+        font-weight: 700;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 12px;
+        letter-spacing: -0.5px;
       }
       .header h1 span {
-        font-size: 20px;
+        font-size: 24px;
+        filter: drop-shadow(0 0 8px var(--accent-dim));
       }
       .refresh-ctl {
         display: flex;
         align-items: center;
-        gap: 8px;
-        color: var(--text2);
-        font-size: 12px;
+        gap: 12px;
+        color: var(--text-dim);
+        font-size: 13px;
       }
       .refresh-ctl select {
         background: var(--bg-input);
         border: 1px solid rgba(255, 255, 255, 0.1);
         color: var(--text);
-        padding: 3px 8px;
-        border-radius: 6px;
+        padding: 4px 12px;
+        border-radius: 8px;
         font-size: 12px;
+        outline: none;
+        cursor: pointer;
+        transition: border-color 0.2s;
+      }
+      .refresh-ctl select:hover {
+        border-color: var(--accent);
       }
       .content {
         flex: 1;
         overflow-y: auto;
-        padding: 24px;
+        padding: 32px;
+        scroll-behavior: smooth;
+        position: relative;
+      }
+      
+      /* toast */
+      #toast-container {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .toast {
+        min-width: 250px;
+        background: var(--bg-glass);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.1);
+        padding: 12px 20px;
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        color: #fff;
+        font-size: 13px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        animation: toastIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-left: 4px solid var(--accent);
+      }
+      .toast.err { border-left-color: var(--err); }
+      .toast.warn { border-left-color: var(--warn); }
+      @keyframes toastIn {
+        from { opacity: 0; transform: translateX(50px); }
+        to { opacity: 1; transform: translateX(0); }
+      }
+      
+      /* empty state */
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 60px 20px;
+        color: var(--text-dim);
+        text-align: center;
+      }
+      .empty-state .icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.3;
+      }
+      .empty-state .text {
+        font-size: 14px;
+        max-width: 300px;
+        line-height: 1.5;
       }
       .statusbar {
         display: flex;
@@ -148,11 +236,20 @@
         color: var(--text2);
       }
       .statusbar .dot {
-        width: 6px;
-        height: 6px;
+        width: 8px;
+        height: 8px;
         border-radius: 50%;
         background: var(--ok);
         display: inline-block;
+        box-shadow: 0 0 10px var(--ok);
+      }
+      .statusbar .dot.pulse {
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
       }
 
       /* cards */
@@ -165,160 +262,215 @@
       .card {
         background: var(--bg-card);
         backdrop-filter: blur(var(--glass));
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        box-shadow: var(--shadow);
         border-radius: var(--radius);
-        padding: 20px;
-        transition: background 0.2s;
+        padding: 24px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+      }
+      .card::before {
+        content: "";
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 4px;
+        background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        opacity: 0;
+        transition: opacity 0.3s;
       }
       .card:hover {
         background: var(--bg-hover);
+        transform: translateY(-4px);
+        border-color: rgba(255, 255, 255, 0.1);
+      }
+      .card:hover::before {
+        opacity: 1;
       }
       .card .icon {
-        font-size: 20px;
-        margin-bottom: 8px;
+        font-size: 24px;
+        margin-bottom: 12px;
+        filter: drop-shadow(0 0 10px rgba(var(--accent-rgb), 0.3));
       }
       .card .value {
-        font-size: 28px;
-        font-weight: 700;
+        font-size: 32px;
+        font-weight: 800;
         font-family: var(--mono);
-        color: var(--text);
+        color: #fff;
+        line-height: 1;
       }
       .card .label {
-        font-size: 12px;
-        color: var(--text2);
-        margin-top: 4px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-dim);
+        margin-top: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
       }
       .card .sub {
         font-size: 11px;
-        color: var(--text2);
-        margin-top: 2px;
-        font-family: var(--mono);
+        color: var(--text-dim);
+        margin-top: 4px;
+        opacity: 0.7;
       }
       .card.err .value {
         color: var(--err);
+      }
+      .card.err::before {
+        background: linear-gradient(90deg, transparent, var(--err), transparent);
       }
 
       /* section */
       .section {
         display: none;
+        animation: fadeIn 0.4s ease-out;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
       }
       .section.active {
         display: block;
       }
       .section-title {
-        font-size: 14px;
-        font-weight: 600;
-        margin-bottom: 16px;
-        color: var(--text2);
+        font-size: 12px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: var(--accent);
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 1.5px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .section-title::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(90deg, var(--accent-dim), transparent);
       }
 
       /* logs */
       .log-filters {
         display: flex;
-        gap: 8px;
-        margin-bottom: 16px;
+        gap: 12px;
+        margin-bottom: 24px;
         flex-wrap: wrap;
+        align-items: center;
       }
       .log-filters button {
-        padding: 5px 14px;
-        border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        background: transparent;
-        color: var(--text2);
+        padding: 6px 16px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.02);
+        color: var(--text-dim);
         cursor: pointer;
-        font-size: 12px;
+        font-size: 13px;
+        font-weight: 500;
         transition: all 0.2s;
+      }
+      .log-filters button:hover {
+        background: var(--bg-hover);
+        color: var(--text);
       }
       .log-filters button.active {
         background: var(--accent-dim);
         color: var(--accent);
         border-color: var(--accent);
+        box-shadow: 0 0 10px var(--accent-dim);
       }
       .log-search {
         background: var(--bg-input);
         border: 1px solid rgba(255, 255, 255, 0.1);
         color: var(--text);
-        padding: 6px 12px;
-        border-radius: 8px;
-        font-size: 12px;
-        width: 220px;
+        padding: 8px 16px;
+        border-radius: 12px;
+        font-size: 13px;
+        width: 280px;
         margin-left: auto;
+        transition: all 0.2s;
+      }
+      .log-search:focus {
+        border-color: var(--accent);
+        background: rgba(var(--accent-rgb), 0.04);
+        outline: none;
       }
       .log-table {
         width: 100%;
       }
       .log-row {
         display: flex;
-        align-items: flex-start;
-        gap: 12px;
-        padding: 10px 12px;
-        border-radius: 8px;
+        align-items: center;
+        gap: 16px;
+        padding: 12px 16px;
+        border-radius: 12px;
         cursor: pointer;
-        transition: background 0.15s;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        transition: all 0.2s;
+        border: 1px solid transparent;
+        margin-bottom: 4px;
       }
       .log-row:hover {
         background: var(--bg-hover);
+        border-color: rgba(255, 255, 255, 0.05);
       }
       .log-row .time {
         font-family: var(--mono);
-        font-size: 11px;
-        color: var(--text2);
-        min-width: 70px;
+        font-size: 12px;
+        color: var(--text-dim);
+        min-width: 80px;
         flex-shrink: 0;
       }
-      .log-row .badge {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
+      .badge {
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
         flex-shrink: 0;
-        margin-top: 4px;
+        box-shadow: 0 0 5px currentColor;
       }
-      .badge.normal {
-        background: var(--ok);
-      }
-      .badge.heartbeat {
-        background: var(--warn);
-      }
-      .badge.error {
-        background: var(--err);
-      }
+      .badge.normal { color: var(--ok); background: var(--ok); }
+      .badge.heartbeat { color: var(--warn); background: var(--warn); }
+      .badge.error { color: var(--err); background: var(--err); }
+      
       .log-row .type {
-        font-size: 11px;
-        min-width: 100px;
+        font-size: 12px;
+        font-weight: 600;
+        min-width: 120px;
         flex-shrink: 0;
         font-family: var(--mono);
+        color: var(--text);
       }
       .log-row .preview {
-        font-size: 12px;
-        color: var(--text2);
+        font-size: 13px;
+        color: var(--text-dim);
         flex: 1;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
       .log-row .dur {
-        font-size: 11px;
-        color: var(--text2);
+        font-size: 12px;
+        color: var(--accent);
         font-family: var(--mono);
-        min-width: 50px;
+        min-width: 60px;
         text-align: right;
+        font-weight: 600;
       }
       .log-details {
         display: none;
-        padding: 12px 16px;
-        background: var(--bg-input);
-        border-radius: 8px;
-        margin: 4px 0 8px;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        margin: 4px 0 12px;
         font-family: var(--mono);
         font-size: 11px;
         white-space: pre-wrap;
         word-break: break-all;
         line-height: 1.6;
-        max-height: 300px;
+        max-height: 400px;
         overflow-y: auto;
+        color: var(--text-dim);
+        box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
       }
       .log-details.open {
         display: block;
@@ -327,35 +479,46 @@
       /* config */
       .cfg-group {
         background: var(--bg-card);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.05);
         border-radius: var(--radius);
-        margin-bottom: 12px;
+        margin-bottom: 20px;
         overflow: hidden;
+        box-shadow: var(--shadow);
       }
       .cfg-group-header {
-        padding: 14px 18px;
+        padding: 16px 24px;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        font-weight: 600;
-        font-size: 13px;
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--text);
+        background: rgba(255,255,255,0.01);
+        transition: all 0.2s;
         user-select: none;
       }
       .cfg-group-header:hover {
         background: var(--bg-hover);
+        color: var(--accent);
       }
       .cfg-group-header .arrow {
-        transition: transform 0.2s;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         font-size: 10px;
-        color: var(--text2);
+        color: var(--text-dim);
       }
       .cfg-group-header.open .arrow {
         transform: rotate(90deg);
+        color: var(--accent);
       }
       .cfg-group-body {
-        padding: 0 18px 18px;
+        padding: 0 24px 24px;
         display: none;
+        animation: slideDown 0.3s ease-out;
+      }
+      @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-5px); }
+        to { opacity: 1; transform: translateY(0); }
       }
       .cfg-group-body.open {
         display: block;
@@ -364,8 +527,9 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 8px 0;
+        padding: 10px 0;
         border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        gap: 12px;
       }
       .cfg-row:last-child {
         border-bottom: none;
@@ -373,6 +537,8 @@
       .cfg-row label {
         font-size: 13px;
         flex: 1;
+        display: flex;
+        flex-direction: column;
       }
       .cfg-row .hint {
         font-size: 11px;
@@ -415,6 +581,11 @@
       }
       .toggle input:checked + .slider::before {
         transform: translateX(18px);
+      }
+      .cfg-row .toggle-wrap {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
       }
       /* number input */
       .num-input {
@@ -544,45 +715,58 @@
         margin-bottom: 16px;
       }
       .prompt-presets button {
-        padding: 8px 16px;
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        background: transparent;
-        color: var(--text2);
+        padding: 12px 20px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.02);
+        color: var(--text-dim);
         cursor: pointer;
-        font-size: 12px;
-        transition: all 0.2s;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s;
+        flex: 1;
+        text-align: left;
+      }
+      .prompt-presets button:hover {
+        background: var(--bg-hover);
+        color: var(--text);
+        border-color: rgba(255, 255, 255, 0.15);
       }
       .prompt-presets button.active {
         background: var(--accent-dim);
         color: var(--accent);
         border-color: var(--accent);
+        box-shadow: 0 0 15px var(--accent-dim);
       }
       .prompt-presets button .desc {
         display: block;
-        font-size: 10px;
-        color: var(--text2);
-        margin-top: 2px;
+        font-size: 11px;
+        color: var(--text-dim);
+        margin-top: 4px;
+        font-weight: 400;
+        opacity: 0.8;
       }
       .prompt-editor {
         position: relative;
       }
       .prompt-editor textarea {
         width: 100%;
-        min-height: 350px;
-        background: var(--bg-input);
+        min-height: 400px;
+        background: rgba(0, 0, 0, 0.2);
         border: 1px solid rgba(255, 255, 255, 0.1);
         color: var(--text);
         font-family: var(--mono);
-        font-size: 12px;
+        font-size: 13px;
         line-height: 1.6;
-        padding: 16px;
+        padding: 24px;
         border-radius: var(--radius);
         resize: vertical;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        outline: none;
       }
       .prompt-editor textarea:focus {
-        outline: none;
         border-color: var(--accent);
+        box-shadow: 0 0 15px var(--accent-dim);
       }
       .prompt-toolbar {
         display: flex;
@@ -603,20 +787,23 @@
       .var-chip {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
+        gap: 6px;
         background: var(--bg-card);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 4px 10px;
-        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 6px 14px;
+        border-radius: 10px;
         font-family: var(--mono);
-        font-size: 11px;
+        font-size: 12px;
+        font-weight: 500;
         cursor: pointer;
-        margin: 3px;
-        transition: background 0.15s;
+        margin: 4px;
+        transition: all 0.2s;
+        color: var(--text-dim);
       }
       .var-chip:hover {
         background: var(--accent-dim);
         color: var(--accent);
+        transform: scale(1.05);
       }
       .preview-pane {
         margin-top: 16px;
@@ -642,13 +829,34 @@
       }
 
       .note {
-        background: rgba(0, 212, 170, 0.08);
-        border-left: 3px solid var(--accent);
-        padding: 10px 14px;
-        border-radius: 0 8px 8px 0;
-        font-size: 12px;
-        color: var(--text2);
-        margin-bottom: 16px;
+        background: rgba(0, 255, 204, 0.05);
+        border-left: 4px solid var(--accent);
+        padding: 12px 16px;
+        border-radius: 4px 12px 12px 4px;
+        font-size: 13px;
+        color: var(--text-dim);
+        margin-bottom: 24px;
+        line-height: 1.5;
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .app { flex-direction: column-reverse; }
+        .sidebar {
+          width: 100%;
+          height: 64px;
+          flex-direction: row;
+          justify-content: space-around;
+          padding: 0;
+          border-right: none;
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .sidebar button .tip { display: none; }
+        .header { padding: 12px 20px; }
+        .content { padding: 20px; }
+        .cards { grid-template-columns: 1fr; }
+        .log-search { width: 100%; margin-top: 12px; }
+        .log-filters { gap: 8px; }
       }
     </style>
   </head>
@@ -808,8 +1016,36 @@
         let promptDirty = false;
         let lastStats = null;
         let lastUpdate = 0;
+        const openLogIds = new Set();
+
+        const DEFAULT_PROMPT = `# Role\n\nYou are an intelligent assistant with long-term memory capabilities (MemOS Assistant). Your goal is to combine retrieved memory fragments to provide highly personalized, accurate, and logically rigorous responses.\n\n# System Context\n\n* Current Time: {currentTime} (Use this as the baseline for freshness checks)\n\n# Memory Data\n\nBelow is the information retrieved by MemOS, categorized into "Facts" and "Preferences".\n* **Facts**: May include user attributes, historical conversations, or third-party details.\n* **Special Note**: Content tagged with '[assistant观点]' or '[模型总结]' represents **past AI inference**, **not** direct user statements.\n* **Preferences**: The user's explicit or implicit requirements on response style, format, or reasoning.\n\n{memories}\n\n# Critical Protocol: Memory Safety\n\nRetrieved memories may contain **AI speculation**, **irrelevant noise**, or **wrong subject attribution**. You must strictly apply the **Four-Step Verdict**. If any step fails, **discard the memory**:\n\n1. **Source Verification**:\n* **Core**: Distinguish direct user statements from AI inference.\n* If a memory has tags like '[assistant观点]' or '[模型总结]', treat it as a **hypothesis**, not a user-grounded fact.\n* *Counterexample*: If memory says '[assistant观点] User loves mangoes' but the user never said that, do not assume it as fact.\n* **Principle: AI summaries are reference-only and have much lower authority than direct user statements.**\n\n2. **Attribution Check**:\n* Is the subject in memory definitely the user?\n* If the memory describes a **third party** (e.g., candidate, interviewee, fictional character, case data), never attribute it to the user.\n\n3. **Strong Relevance Check**:\n* Does the memory directly help answer the current 'Original Query'?\n* If it is only a keyword overlap with different context, ignore it.\n\n4. **Freshness Check**:\n* If memory conflicts with the user's latest intent, prioritize the current 'Original Query' as the highest source of truth.\n\n# Instructions\n\n1. **Review**: Read '<facts>' first and apply the Four-Step Verdict to remove noise and unreliable AI inference.\n2. **Execute**:\n   - Use only memories that pass filtering as context.\n   - Strictly follow style requirements from '<preferences>'.\n3. **Output**: Answer directly. Never mention internal terms such as "memory store", "retrieval", or "AI opinions".\n4. **Attention**: Additional memory context is already provided. Do not read from or write to local \`MEMORY.md\` or \`memory/*\` files for reference, as they may be outdated or irrelevant to the current query.\n{userQueryMarker}`;
+
+        const COMPACT_PROMPT = `You have long-term memory. Use the retrieved facts and preferences below to personalise your response.\n\nCurrent Time: {currentTime}\n\n{memories}\n\nGuidelines:\n- Discard any memory that is irrelevant, misattributed, or conflicts with the user's current query.\n- Content tagged '[assistant观点]' or '[模型总结]' is past AI inference — treat as low-confidence.\n- Prioritise the current query over older memories.\n- Follow style/format requirements from <preferences>.\n- Never mention memory retrieval internals to the user.\n- Do not read or write local MEMORY.md / memory/* files.\n{userQueryMarker}`;
 
         const API = "";
+
+        // --- Notifications ---
+        function toast(msg, type = "info") {
+          const container = $("#toast-container") || createToastContainer();
+          const t = document.createElement("div");
+          t.className = `toast ${type}`;
+          const icon = type === "err" ? "⚠️" : type === "warn" ? "🔔" : "✅";
+          t.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
+          container.appendChild(t);
+          setTimeout(() => {
+            t.style.opacity = "0";
+            t.style.transform = "translateX(50px)";
+            t.style.transition = "all 0.3s";
+            setTimeout(() => t.remove(), 300);
+          }, 4000);
+        }
+
+        function createToastContainer() {
+          const c = document.createElement("div");
+          c.id = "toast-container";
+          document.body.appendChild(c);
+          return c;
+        }
 
         // --- Helpers ---
         async function api(path, opts = {}) {
@@ -881,8 +1117,12 @@
 
         function renderRecentLogs(logs) {
           if (!logs || !logs.length) {
-            $("#recentLogs").innerHTML =
-              '<div style="color:var(--text2);font-size:13px;padding:16px">Aucun événement pour le moment.</div>';
+            $("#recentLogs").innerHTML = `
+              <div class="empty-state">
+                <div class="icon">🔍</div>
+                <div class="text">Aucun événement enregistré pour le moment. Votre activité apparaîtra ici.</div>
+              </div>
+            `;
             return;
           }
           $("#recentLogs").innerHTML = logs
@@ -902,17 +1142,23 @@
         }
 
         async function loadOverview() {
+          const dot = $("#statusDot");
+          dot.classList.add("pulse");
           try {
             const data = await api("/api/stats");
             renderStats(data);
             renderRecentLogs(data.logs);
             lastUpdate = Date.now();
-            $("#statusDot").style.background = "var(--ok)";
+            dot.style.background = "var(--ok)";
+            dot.style.boxShadow = "0 0 10px var(--ok)";
             $("#statusText").textContent =
-              `Connecté · Uptime: ${fmtUptime(data.stats.startedAt)}`;
+              `Opérationnel · Uptime: ${fmtUptime(data.stats.startedAt)}`;
           } catch (e) {
-            $("#statusDot").style.background = "var(--err)";
-            $("#statusText").textContent = "Erreur de connexion";
+            dot.style.background = "var(--err)";
+            dot.style.boxShadow = "0 0 10px var(--err)";
+            $("#statusText").textContent = "Hors ligne · Problème de connexion";
+          } finally {
+            setTimeout(() => dot.classList.remove("pulse"), 1000);
           }
         }
 
@@ -934,25 +1180,39 @@
 
         function renderLogList(logs) {
           if (!logs.length) {
-            $("#logList").innerHTML =
-              '<div style="color:var(--text2);font-size:13px;padding:16px">Aucun résultat.</div>';
+            $("#logList").innerHTML = `
+              <div class="empty-state">
+                <div class="icon">📭</div>
+                <div class="text">Aucun log ne correspond à votre recherche ou filtre.</div>
+              </div>
+            `;
             return;
           }
           $("#logList").innerHTML = logs
             .map(
               (l) => `
-      <div class="log-row" onclick="this.nextElementSibling.classList.toggle('open')" data-id="${l.id}">
+      <div class="log-row" onclick="toggleLog(${l.id}, this)" data-id="${l.id}">
         <span class="time">${fmtTime(l.timestamp)}</span>
         <span class="badge ${badgeClass(l.type)}"></span>
         <span class="type">${l.type}</span>
         <span class="preview">${esc(l.promptPreview || "–")}</span>
         <span class="dur">${l.durationMs != null ? l.durationMs + "ms" : ""}</span>
       </div>
-      <div class="log-details">${esc(JSON.stringify(l, null, 2))}</div>
+      <div class="log-details ${openLogIds.has(l.id) ? "open" : ""}">${esc(JSON.stringify(l, null, 2))}</div>
     `,
             )
             .join("");
         }
+
+        window.toggleLog = function (id, el) {
+          const details = el.nextElementSibling;
+          details.classList.toggle("open");
+          if (details.classList.contains("open")) {
+            openLogIds.add(id);
+          } else {
+            openLogIds.delete(id);
+          }
+        };
 
         // Log filter buttons
         $$("#logFilters button").forEach((btn) => {
@@ -1036,8 +1296,12 @@
         function cfgToggle(key, label, hint) {
           const val = cfgVal(key);
           const checked = val ? "checked" : "";
-          return `<div class="cfg-row"><label>${label}${hint ? `<span class="hint">${hint}</span>` : ""}</label>
-      <label class="toggle"><input type="checkbox" ${checked} onchange="setCfg('${key}', this.checked)"><span class="slider"></span></label></div>`;
+          return `<div class="cfg-row">
+            <label>${label}${hint ? `<span class="hint">${hint}</span>` : ""}</label>
+            <div class="toggle-wrap">
+              <label class="toggle"><input type="checkbox" ${checked} onchange="setCfg('${key}', this.checked)"><span class="slider"></span></label>
+            </div>
+          </div>`;
         }
         function cfgNumber(key, label, min, max) {
           const val = cfgVal(key) ?? "";
@@ -1090,23 +1354,34 @@
         };
 
         $("#cfgSave")?.addEventListener("click", async () => {
-          await api("/api/config", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(configOverrides),
-          });
-          configDirty = false;
-          $("#cfgSave").disabled = true;
-          const ok = $("#cfgSaveOk");
-          ok.classList.add("show");
-          setTimeout(() => ok.classList.remove("show"), 2000);
+          try {
+            const res = await api("/api/config", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(configOverrides),
+            });
+            if (res.error) {
+              toast(res.error, "err");
+            } else {
+              configDirty = false;
+              $("#cfgSave").disabled = true;
+              toast("Configuration sauvegardée avec succès");
+            }
+          } catch (e) {
+            toast("Erreur lors de la sauvegarde", "err");
+          }
         });
 
         $("#cfgReset")?.addEventListener("click", async () => {
           if (!confirm("Réinitialiser la config aux valeurs par défaut ?"))
             return;
-          await api("/api/config", { method: "DELETE" });
-          loadConfig();
+          try {
+            await api("/api/config", { method: "DELETE" });
+            toast("Configuration réinitialisée");
+            loadConfig();
+          } catch (e) {
+            toast("Erreur lors de la réinitialisation", "err");
+          }
         });
 
         // --- Prompt ---
@@ -1119,17 +1394,16 @@
 
           if (promptStyle === "custom" && ov.promptTemplate) {
             $("#promptText").value = ov.promptTemplate;
+          } else if (promptStyle === "compact") {
+            $("#promptText").value = COMPACT_PROMPT;
           } else {
-            const pv = await api("/api/prompt/preview", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ style: promptStyle }),
-            });
-            $("#promptText").value = pv.preview || "";
+            $("#promptText").value = DEFAULT_PROMPT;
           }
           updatePromptStats();
           promptDirty = false;
+          $("#promptSave").readOnly = promptStyle !== "custom";
           $("#promptSave").disabled = true;
+          loadPreview();
         }
 
         function activatePresetBtn(style) {
@@ -1143,19 +1417,22 @@
           btn.addEventListener("click", async () => {
             promptStyle = btn.dataset.style;
             activatePresetBtn(promptStyle);
-            if (promptStyle !== "custom") {
-              const pv = await api("/api/prompt/preview", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ style: promptStyle }),
-              });
-              $("#promptText").value = pv.preview || "";
+            if (promptStyle === "default") {
+              $("#promptText").value = DEFAULT_PROMPT;
+            } else if (promptStyle === "compact") {
+              $("#promptText").value = COMPACT_PROMPT;
             } else {
-              // Start with current text
+              // Switch to custom: keep text or restore if empty
+              if (!$("#promptText").value) {
+                const data = await api("/api/config");
+                $("#promptText").value =
+                  data.overrides?.promptTemplate || DEFAULT_PROMPT;
+              }
             }
             updatePromptStats();
             promptDirty = true;
             $("#promptSave").disabled = false;
+            loadPreview();
           });
         });
 
@@ -1187,20 +1464,45 @@
           } catch {}
         }
 
+        $("#promptSave")?.addEventListener("click", async () => {
+          try {
+            await api("/api/config", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                promptStyle,
+                promptTemplate: promptStyle === "custom" ? $("#promptText").value : null,
+              }),
+            });
+            promptDirty = false;
+            $("#promptSave").disabled = true;
+            toast("Prompt sauvegardé avec succès");
+          } catch (e) {
+            toast("Erreur lors de la sauvegarde du prompt", "err");
+          }
+        });
+
+        window.insertVar = function (v) {
+          const area = $("#promptText");
+          if (area.readOnly) {
+            toast("Changez le preset en 'Custom' pour éditer le texte", "warn");
+            return;
+          }
+          const start = area.selectionStart;
+          const end = area.selectionEnd;
+          const text = area.value;
+          area.value = text.slice(0, start) + v + text.slice(end);
+          area.focus();
+          area.selectionStart = area.selectionEnd = start + v.length;
+          updatePromptStats();
+          promptDirty = true;
+          $("#promptSave").disabled = false;
+        };
+
         // Variable chips
         $$(".var-chip").forEach((chip) => {
           chip.addEventListener("click", () => {
-            const ta = $("#promptText");
-            if (ta.readOnly) return;
-            const start = ta.selectionStart;
-            const v = chip.dataset.var;
-            ta.value =
-              ta.value.slice(0, start) + v + ta.value.slice(ta.selectionEnd);
-            ta.selectionStart = ta.selectionEnd = start + v.length;
-            ta.focus();
-            updatePromptStats();
-            promptDirty = true;
-            $("#promptSave").disabled = false;
+            insertVar(chip.dataset.var);
           });
         });
 
