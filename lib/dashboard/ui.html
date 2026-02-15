@@ -68,6 +68,7 @@
         padding: 24px 0;
         gap: 12px;
         flex-shrink: 0;
+        z-index: 500;
       }
       .sidebar button {
         width: 48px;
@@ -107,7 +108,7 @@
         opacity: 0;
         pointer-events: none;
         transition: all 0.2s;
-        z-index: 100;
+        z-index: 2000;
         border: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: var(--shadow);
         transform: translateX(-10px);
@@ -664,10 +665,14 @@
         gap: 12px;
         margin-top: 20px;
         position: sticky;
-        bottom: 0;
-        background: var(--bg);
-        padding: 16px 0;
+        bottom: -32px; /* Pull down to content edge */
+        background: rgba(10, 10, 25, 0.2);
+        backdrop-filter: blur(10px);
+        padding: 16px 24px;
+        margin-left: -24px;
+        margin-right: -24px;
         border-top: 1px solid rgba(255, 255, 255, 0.06);
+        z-index: 10;
       }
       .btn {
         padding: 8px 20px;
